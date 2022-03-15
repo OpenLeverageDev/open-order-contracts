@@ -1,0 +1,27 @@
+{
+  "name": "open-order-contracts",
+  "version": "1.0.0",
+  "description": "Limit Order protocol to support any token, any AMM-based DEX, all EVM-compatible chains.",
+  "main": "truffle-config.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/OpenLeverageDev/open-order-contracts.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/OpenLeverageDev/open-order-contracts/issues"
+  },
+  "homepage": "https://github.com/OpenLeverageDev/open-order-contracts#readme",
+  "dependencies": {
+    "@openzeppelin/contracts": "^4.5.0",
+    "ganache-cli": "^6.12.2"
+  }
+}
