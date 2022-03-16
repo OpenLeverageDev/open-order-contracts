@@ -5,9 +5,11 @@ import "./interfaces/DexAggregatorInterface.sol";
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/utils/cryptography/SignatureChecker.sol";
 
 import "./libraries/Order.sol";
 import "./libraries/TransferHelper.sol";
+
 
 contract OpenOrder is ERC721{
     using Order for Order.OrderArgs;
@@ -20,6 +22,7 @@ contract OpenOrder is ERC721{
     address public openLeverage;
     address public dexAggregator;
     uint32 avgPriceGap;
+    mapping(address => mapping(uint => bool)) public invalidNonces;
 
     // output data or extract from transaction?
     event OrderCreated(address indexed owner, uint indexed orderID, uint indexed orderHash, Order.OrderArgs order);
@@ -37,7 +40,7 @@ contract OpenOrder is ERC721{
     event MarginTradeExecuted(address indexed owner, address indexed executor, uint indexed orderID, Order.OrderArgs order);
     event CloseTradeExecuted(address indexed owner, address indexed executor, uint indexed orderID, Order.OrderArgs order);
 
-    constructor(uint32 _avgPriceGap) ERC721("Open Order", "OO"){
+    constructor(uint32 _avgPriceGap) ERC721("Open Order", "OO") {
         avgPriceGap = _avgPriceGap;
     }
 
@@ -53,41 +56,55 @@ contract OpenOrder is ERC721{
         }
     }
 
-    function cancelOrders(Order.OrderArgs[] calldata _orders, uint[] memory _nonces) external {
+    function cancelOrders(Order.OrderArgs[] calldata _orders, uint[] memory _orderIDs) external {
         for (uint i; i < _orders.length; i++){
-            cancelOrder(_orders[i], _nonces[i]);
+            cancelOrder(_orders[i], _orderIDs[i]);
         }
     }
 
+    function revokeNonce(uint _nonce) external{
+        require(!invalidNonces[msg.sender][_nonce], "OpenOrder: NONCE REVOKED");
+        invalidNonces[msg.sender][_nonce] = true;
+    }
+
     /// @dev call ERC20(_callTarget).transferFrom(from, to, amount) to collect deposit token.
-    function executeSpotTrade(Order.OrderArgs calldata _order, uint _orderID, address _callTarget, uint _amount, bytes calldata _data) external payable ensure(_order.deadline){
+    function executeSpotTrade(
+        Order.OrderArgs calldata _order, 
+        uint _orderID, 
+        address _callTarget, 
+        uint _amount, 
+        bytes calldata _data
+    ) 
+        external payable ensure(_order.deadline)
+    {
         uint orderHash = uint256(keccak256(abi.encode(_order, _orderID)));
         // unstake NFT if needed
 
         address orderOwner = ownerOf(orderHash);
         require(orderOwner != address(0), "OpenOrder: ORDER NOT EXISTS");
-
+        
         _burn(orderHash);
 
-        Order.SpotTradeArgs memory spotTradeParams = _order.decodeSpotTradeParams();
+        _executeSpotTrade(orderOwner, _order, _orderID, _callTarget, _amount, _data);
+    }
 
-        uint amountToWithdraw = swap(spotTradeParams, _callTarget, _data);       
-        amountToWithdraw += collect(spotTradeParams.withdrawToken, _amount);
-        require(avgPrice <= _order.triggerBelow && avgPrice >= _order.triggerAbove, "OpenOrder: INVALID EXECUTION");
+    function executeSpotTradeBySig(
+        address _owner, 
+        uint _nonce, 
+        Order.OrderArgs calldata _order, 
+        address _callTarget, 
+        uint _amount, 
+        bytes calldata _data, 
+        bytes calldata _sig
+    )
+        external payable ensure(_order.deadline) 
+    {
+        require(!invalidNonces[_owner][_nonce], "OpenOrder: NONCE REVOKED");
+        require(SignatureChecker.isValidSignatureNow(_owner, Order.hashToSign(_order, _nonce), _sig), "OpenOrder: INVALID SIGNATURE");
 
-        pay(orderOwner, spotTradeParams.withdrawToken, amountToWithdraw);
-        pay(msg.sender, _order.commisionToken, _order.commision);
+        invalidNonces[_owner][_nonce] = true;
 
-        emit SpotTradeExecuted(
-            orderOwner,
-            msg.sender,
-            _orderID,
-            _order,
-            amountToWithdraw,
-            _callTarget,
-            _amount,
-            _data
-        );
+        _executeSpotTrade(_owner, _order, 0, _callTarget, _amount, _data);
     }
 
     function executeMarginTrade(Order.OrderArgs calldata _order, uint _orderID) external ensure(_order.deadline) {
@@ -101,20 +118,19 @@ contract OpenOrder is ERC721{
 
         _burn(orderHash);
 
-        // get Price
-        Order.MarginTradeArgs memory marginTradeParams = _order.decodeMarginTradeParams();
-        OpenLevInterface.Market memory market = OpenLevInterface(openLeverage).markets(marginTradeParams.marketId);
-        uint avgPrice = avgPriceOf(marginTradeParams.depositToken, market, marginTradeParams.dexData) ;
-        require(avgPrice <= _order.triggerBelow && avgPrice >= _order.triggerAbove, "OpenOrder: INVALID EXECUTION");
-
-        // call marginTrade
-        callOpenLeverage(_order.callArgs, (marginTradeParams.depositToken ? market.token1 == nativeToken : market.token0 == nativeToken) ? marginTradeParams.deposit : 0);
-        pay(msg.sender, _order.commisionToken, _order.commision);
-        
-        emit MarginTradeExecuted(orderOwner, msg.sender, _orderID, _order);
+        _executeMarginTrade(orderOwner, _order, _orderID);
     }
 
-    function executeCloseTrade(Order.OrderArgs calldata _order, uint _orderID) external {
+    function executeMarginTradeBySigs(address _owner, uint _nonce, Order.OrderArgs calldata _order, bytes calldata _sig) external payable ensure(_order.deadline){
+        require(!invalidNonces[_owner][_nonce], "OpenOrder: NONCE REVOKED");
+        require(SignatureChecker.isValidSignatureNow(_owner, Order.hashToSign(_order, _nonce), _sig), "OpenOrder: INVALID SIGNATURE");
+
+        invalidNonces[_owner][_nonce] = true;
+        
+        _executeMarginTrade(_owner, _order, 0);
+    }
+
+    function executeCloseTrade(Order.OrderArgs calldata _order, uint _orderID) external ensure(_order.deadline){
         require(_order.isCloseTrade(), "OpenOrder: NOT CLOSE TRADE");
         uint orderHash = uint256(keccak256(abi.encode(_order, _orderID)));
 
@@ -124,19 +140,17 @@ contract OpenOrder is ERC721{
         require(orderOwner != address(0), "OpenOrder: ORDER NOT EXISTS");
 
         _burn(orderHash);
+        _executeCloseTrade(orderOwner, _order, _orderID);
+    }
 
-        // get Price
-        Order.CloseTradeArgs memory closeTradeParams = _order.decodeCloseTradeParams();
-        OpenLevInterface.Market memory market = OpenLevInterface(openLeverage).markets(closeTradeParams.marketId);
-        OpenLevInterface.Trade memory trade = OpenLevInterface(openLeverage).activeTrades( closeTradeParams.holder, closeTradeParams.marketId, closeTradeParams.longToken);
-        uint avgPrice = avgPriceOf(marginTradeParams.depositToken, market, marginTradeParams.dexData) ;
-        require(avgPrice <= _order.triggerBelow && avgPrice >= _order.triggerAbove, "OpenOrder: INVALID EXECUTION");
+    function executeCloseTradeBySigs(address _owner, uint _nonce, Order.OrderArgs calldata _order, bytes calldata _sig) external payable ensure(_order.deadline)
+    {
+        require(!invalidNonces[_owner][_nonce], "OpenOrder: NONCE REVOKED");
+        require(SignatureChecker.isValidSignatureNow(_owner, Order.hashToSign(_order, _nonce), _sig), "OpenOrder: INVALID SIGNATURE");
 
-        // call marginTrade
-        callOpenLeverage(_order.callArgs, 0);
-        pay(msg.sender, _order.commisionToken, _order.commision);
-
-        emit CloseTradeExecuted(orderOwner, msg.sender, _orderID, _order);
+        invalidNonces[_owner][_nonce] = true;
+        
+        _executeCloseTrade(_owner, _order, 0);
     }
 
     function createOrder(Order.OrderArgs calldata _order) public returns (uint orderID) {        
@@ -156,7 +170,7 @@ contract OpenOrder is ERC721{
             order = order.setSpotTradeParams(spotTradeParams, commision);
         }
 
-        orderID = lastOrderID++;
+        orderID = ++lastOrderID;
         uint orderHash = uint(keccak256(abi.encode(_order, orderID)));
         _mint(msg.sender, orderHash);
 
@@ -165,7 +179,6 @@ contract OpenOrder is ERC721{
         emit OrderCreated(msg.sender, orderID, orderHash, order);
     }
 
-    // ensure dedaline or not?
     function cancelOrder(Order.OrderArgs calldata _order, uint _orderID) public ensure(_order.deadline) {
         uint orderHash = uint256(keccak256(abi.encode(_order, _orderID)));
         require(ownerOf(orderHash) == msg.sender, "OpenOrder: UNAUTHORIZED");
@@ -198,6 +211,66 @@ contract OpenOrder is ERC721{
         }
 
         return balanceOf(_args.withdrawToken, address(this)) - balanceBefore;
+    }
+
+    function _executeSpotTrade(
+        address _orderOwner, 
+        Order.OrderArgs calldata _order, 
+        uint _orderID,
+        address _callTarget, 
+        uint _amount, 
+        bytes calldata _data
+    ) 
+        internal 
+    {
+        Order.SpotTradeArgs memory spotTradeParams = _order.decodeSpotTradeParams();
+
+        uint amountToWithdraw = swap(spotTradeParams, _callTarget, _data);       
+        amountToWithdraw += collect(spotTradeParams.withdrawToken, _amount);
+        require(amountToWithdraw <= _order.triggerBelow && amountToWithdraw >= _order.triggerAbove, "OpenOrder: INVALID EXECUTION");
+
+        pay(_orderOwner, spotTradeParams.withdrawToken, amountToWithdraw);
+        pay(msg.sender, _order.commisionToken, _order.commision);
+
+        emit SpotTradeExecuted(
+            _orderOwner,
+            msg.sender,
+            _orderID,
+            _order,
+            amountToWithdraw,
+            _callTarget,
+            _amount,
+            _data
+        );
+    }
+
+    function _executeMarginTrade(address orderOwner, Order.OrderArgs calldata _order, uint _orderID) internal {
+        // get Price
+        Order.MarginTradeArgs memory marginTradeParams = _order.decodeMarginTradeParams();
+        OpenLevInterface.Market memory market = OpenLevInterface(openLeverage).markets(marginTradeParams.marketId);
+        uint avgPrice = avgPriceOf(marginTradeParams.depositToken, market, marginTradeParams.dexData) ;
+        require(avgPrice <= _order.triggerBelow && avgPrice >= _order.triggerAbove, "OpenOrder: INVALID EXECUTION");
+
+        // call marginTrade
+        callOpenLeverage(_order.callArgs, (marginTradeParams.depositToken ? market.token1 == nativeToken : market.token0 == nativeToken) ? marginTradeParams.deposit : 0);
+        pay(msg.sender, _order.commisionToken, _order.commision);
+        
+        emit MarginTradeExecuted(orderOwner, msg.sender, _orderID, _order);
+    }
+
+    function _executeCloseTrade(address orderOwner, Order.OrderArgs calldata _order, uint _orderID) internal{
+        // get Price
+        Order.CloseTradeArgs memory closeTradeParams = _order.decodeCloseTradeParams();
+        OpenLevInterface.Market memory market = OpenLevInterface(openLeverage).markets(closeTradeParams.marketId);
+        OpenLevInterface.Trade memory trade = OpenLevInterface(openLeverage).activeTrades( closeTradeParams.holder, closeTradeParams.marketId, closeTradeParams.longToken);
+        uint avgPrice = avgPriceOf(trade.depositToken, market, closeTradeParams.dexData) ;
+        require(avgPrice <= _order.triggerBelow && avgPrice >= _order.triggerAbove, "OpenOrder: INVALID EXECUTION");
+
+        // call marginTrade
+        callOpenLeverage(_order.callArgs, 0);
+        pay(msg.sender, _order.commisionToken, _order.commision);
+
+        emit CloseTradeExecuted(orderOwner, msg.sender, _orderID, _order);
     }
 
     function callOpenLeverage(bytes memory _data, uint _amount) internal{

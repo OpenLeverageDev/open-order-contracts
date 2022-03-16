@@ -40,6 +40,14 @@ library Order{
         bytes callArgs;
     }
 
+    bytes32 constant public ORDERARGS_TYPEHASH = keccak256(
+        "OrderArgs(address commisionToken,uint256 commision,uint256 deadline,uint256 triggerBelow,uint256 triggerAbove,bytes callArgs)"
+    );  
+
+    function hashToSign(Order.OrderArgs calldata _order, uint _nonce) public view returns (bytes32){
+        return keccak256(abi.encode(address(this), Order.ORDERARGS_TYPEHASH, _order, _nonce));
+    }
+
     function isMarginTrade(OrderArgs calldata _order) internal pure returns (bool) {
         return bytes4(_order.callArgs[:4]) == OpenLevInterface.marginTradeFor.selector;
     }
