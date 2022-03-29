@@ -14,7 +14,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
         uint balanceBefore = _token.balanceOf(_to);
         (bool success, ) = address(_token).call(abi.encodeWithSelector(_token.transfer.selector, _to, _amount));
         uint balanceAfter = _token.balanceOf(_to);
-        require(success && balanceAfter >= balanceBefore, "TRANSFER FAILED");
+        require(success && balanceAfter >= balanceBefore, "TransferHelper:TRANSFER FAILED");
         amountReceived = balanceAfter - balanceBefore;
     }
 
@@ -22,7 +22,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
         uint balanceBefore = _token.balanceOf(_to);
         (bool success, ) = address(_token).call(abi.encodeWithSelector(_token.transferFrom.selector, _from, _to, _amount));
         uint balanceAfter = _token.balanceOf(_to);
-        require(success && balanceAfter >= balanceBefore, "TRANSFER FROM FAILED");
+        require(success && balanceAfter >= balanceBefore, "TransferHelper:TRANSFER FROM FAILED");
         amountReceived = balanceAfter - balanceBefore;
     }
 
@@ -30,9 +30,9 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
         bool success;
         if (_token.allowance(address(this), _spender) != 0){
             (success, ) = address(_token).call(abi.encodeWithSelector(_token.approve.selector, _spender, 0));
-            require(success && _token.allowance(address(this), _spender) == 0, "APPROVE 0 FAILED");
+            require(success && _token.allowance(address(this), _spender) == 0, "TransferHelper:APPROVE 0 FAILED");
         }
         (success, ) = address(_token).call(abi.encodeWithSelector(_token.approve.selector, _spender, _amount));
-        require(success && _token.allowance(address(this), _spender) == _amount, "APPROVE FAILED");
+        require(success && _token.allowance(address(this), _spender) == _amount, "TransferHelper:APPROVE FAILED");
     }
 }

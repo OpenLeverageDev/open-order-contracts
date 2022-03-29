@@ -32,5 +32,5 @@ interface OpenLevInterface {
     function activeTrades(address holder, uint16 marketId, bool long) external view returns(Trade memory trade);
     function markets(uint16 marketId) external view returns(Market memory market);
     function marginTradeFor(address holder, uint16 marketId, bool longToken, bool depositToken, uint deposit, uint borrow, uint minBuyAmount, bytes memory dexData) external payable;
-    function closeTrade(uint16 marketId, bool longToken, uint closeAmount, uint minOrMaxAmount, bytes memory dexData) external;
+    function closeTradeByOpenOrder(address holder, uint16 marketId, bool longToken, uint closeHeld, uint minOrMaxAmount, bytes memory dexData) external;
 }

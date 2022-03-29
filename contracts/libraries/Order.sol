@@ -4,12 +4,9 @@ pragma solidity > 0.8.0;
 import "../interfaces/OpenLevInterface.sol";
 
 library Order{
-
-    struct SpotTradeArgs{
-        address depositToken;
-        uint deposit;
-        address withdrawToken;
-    }
+    uint constant TYPE_MARGIN_LIMIT_OPEN = 1;
+    uint constant TYPE_LIMIT_CLOSE = 2;
+    uint constant TYPE_LIMIT_STOP_LOSS = 3;
 
     struct MarginTradeArgs{
         address holder;
@@ -32,38 +29,19 @@ library Order{
     }
 
     struct OrderArgs{
-        address commisionToken;
-        uint commision;
-        uint deadline;
-        uint triggerBelow;
-        uint triggerAbove;
+        address depositToken;
+        uint orderType;
+        uint commission;
+        uint expiryTime;
+        uint limitPrice;
+        bytes32 linkTo;
         bytes callArgs;
     }
 
     bytes32 constant public ORDERARGS_TYPEHASH = keccak256(
-        "OrderArgs(address commisionToken,uint256 commision,uint256 deadline,uint256 triggerBelow,uint256 triggerAbove,bytes callArgs)"
+        "OrderArgs(address commissionToken,uint256 commission,uint256 expireTime,uint256 triggerBelow,uint256 triggerAbove,bytes callArgs)"
     );  
-
-    function hashToSign(Order.OrderArgs calldata _order, uint _nonce) public view returns (bytes32){
-        return keccak256(abi.encode(address(this), Order.ORDERARGS_TYPEHASH, _order, _nonce));
-    }
-
-    function isMarginTrade(OrderArgs calldata _order) internal pure returns (bool) {
-        return bytes4(_order.callArgs[:4]) == OpenLevInterface.marginTradeFor.selector;
-    }
-
-    function isCloseTrade(OrderArgs calldata _order) internal pure returns (bool) {
-        return bytes4(_order.callArgs[:4]) == OpenLevInterface.closeTrade.selector;
-    }
-
-    function decodeSpotTradeParams(OrderArgs calldata _order) internal pure returns (SpotTradeArgs memory params){
-        (
-           params.depositToken,
-           params.deposit,
-           params.withdrawToken
-       ) = abi.decode(_order.callArgs[4:], (address, uint, address));
-    }
-
+    
     function decodeMarginTradeParams(OrderArgs calldata _order) internal pure returns (MarginTradeArgs memory params){
        (
            params.holder,
@@ -87,39 +65,8 @@ library Order{
            params.dexData
        ) = abi.decode(_order.callArgs[4:], (address, uint16, bool, uint, uint, bytes));
     }
-    
-    function setSpotTradeParams(OrderArgs memory _order, SpotTradeArgs memory _params, uint _commision) internal pure returns (OrderArgs memory){
-        _order.commision = _commision;
-        _order.callArgs = abi.encode(
-            _params.depositToken,
-            _params.deposit,
-            _params.withdrawToken
-        );
 
-        return _order;
-    }
-    
-    function setMarginTradeParams(OrderArgs memory _order, MarginTradeArgs memory _params, uint _commision) public pure returns (OrderArgs memory){
-        _order.commision = _commision;
-        _order.callArgs = abi.encodePacked(
-            OpenLevInterface.marginTradeFor.selector,
-            abi.encode(
-                _params.holder,
-                _params.marketId,
-                _params.longToken,
-                _params.depositToken,
-                _params.deposit,
-                _params.borrow,
-                _params.minBuyAmount,
-                _params.dexData
-            )
-        );
-
-        return _order;
-    }
-
-    function setCloseTradeParams(OrderArgs memory _order, uint _commision) internal pure returns (OrderArgs memory){
-        _order.commision = _commision;
-        return _order;
+    function orderHash(OrderArgs memory _order,  uint _nonce) internal view returns (bytes32){
+        return keccak256(abi.encode(block.chainid, _order, _nonce));
     }
 }
