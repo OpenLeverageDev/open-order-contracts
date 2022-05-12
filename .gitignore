@@ -1,0 +1,10 @@
+/build
+/node_modules
+/package-lock.json
+/truffle-config.js
+.DS_Store
+/contracts/artifacts/
+contracts/*/artifacts
+/contracts/*/*/artifacts
+
+.idea/*
