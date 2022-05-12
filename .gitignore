@@ -7,7 +7,4 @@
 contracts/*/artifacts
 /contracts/*/*/artifacts
 
-.idea/misc.xml
-.idea/modules.xml
-.idea/open-order-contracts.iml
-.idea/vcs.xml
+.idea/*
