@@ -1,6 +1,7 @@
 const OpenOrder = artifacts.require("OpenOrder");
 
 contract("OpenOrders", async accounts => {
+
     it("should create order properly", async () => {})
 
     it("should execute margin trade properly", async () => {})
