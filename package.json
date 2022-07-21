@@ -21,7 +21,7 @@
   },
   "homepage": "https://github.com/OpenLeverageDev/open-order-contracts#readme",
   "dependencies": {
-    "@openzeppelin/contracts": "^4.5.0",
+    "@openzeppelin/contracts": "^4.7.1",
     "ganache-cli": "^6.12.2"
   }
 }
