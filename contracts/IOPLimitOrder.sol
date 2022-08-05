@@ -52,8 +52,8 @@ abstract contract OPLimitOrderStorage {
         uint256 expectReturn;
     }
 
-    bytes32 constant public STATIC_ORDER_TYPEHASH = keccak256(
-        "StaticOrder(uint256 salt,address owner,uint32 deadline,uint16 marketId,bool longToken,bool depositToken,address commissionToken,uint256 commission,uint256 price0)"
+    bytes32 constant public ORDER_TYPEHASH = keccak256(
+        "Order(uint256 salt,address owner,uint32 deadline,uint16 marketId,bool longToken,bool depositToken,address commissionToken,uint256 commission,uint256 price0)"
     );
     bytes32 constant public OPEN_ORDER_TYPEHASH = keccak256(
         "OpenOrder(uint256 salt,address owner,uint32 deadline,uint16 marketId,bool longToken,bool depositToken,address commissionToken,uint256 commission,uint256 price0,uint256 deposit,uint256 borrow,uint256 expectHeld)"

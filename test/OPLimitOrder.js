@@ -150,7 +150,8 @@ contract("OPLimitOrder", async accounts => {
         expect('0x' + hash).equal(await limitOrder.hashOpenOrder(order));
         const signature = ethSigUtil.signTypedMessage(privatekey, {data});
         await openLev.setNewHeld(expectHeld);
-        await limitOrder.fillOpenOrder(order, signature, deposit, dexData, {from: bot});
+        let tx = await limitOrder.fillOpenOrder(order, signature, deposit, dexData, {from: bot});
+        m.log("Fill open order gas used =", tx.receipt.gasUsed);
         let trade = await openLev.activeTrades(trader, 0, false);
         expect(trade.deposited).equal('1');
         expect(trade.held).equal('3');
@@ -170,7 +171,8 @@ contract("OPLimitOrder", async accounts => {
         expect('0x' + hash).equal(await limitOrder.hashCloseOrder(order));
         const signature = ethSigUtil.signTypedMessage(privatekey, {data: data});
         await openLev.setDepositReturn(expectReturn);
-        await limitOrder.fillCloseOrder(order, signature, closeHeld, dexData, {from: bot});
+        let tx = await limitOrder.fillCloseOrder(order, signature, closeHeld, dexData, {from: bot});
+        m.log("Fill close order gas used =", tx.receipt.gasUsed);
         expect((await commissionToken.balanceOf(bot)).toString()).equal('1');
         expect((await token0.balanceOf(trader)).toString()).equal('1');
     })

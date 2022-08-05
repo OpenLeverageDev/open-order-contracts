@@ -141,6 +141,18 @@ EIP712("OpenLeverage Limit Order", "1"), IOPLimitOrder, OPLimitOrderStorage
         return _remaining[_orderId];
     }
 
+    function orderId(Order memory order) external override view returns (bytes32) {
+        return _orderId(order);
+    }
+
+    function hashOpenOrder(OPLimitOrderStorage.OpenOrder memory order) external override view returns (bytes32){
+        return _hashOpenOrder(order);
+    }
+
+    function hashCloseOrder(OPLimitOrderStorage.CloseOrder memory order) external override view returns (bytes32){
+        return _hashCloseOrder(order);
+    }
+
     function _cancelOrder(Order memory order) internal {
         require(order.owner == msg.sender, "OON");
         bytes32 orderId = _orderId(order);
@@ -191,23 +203,11 @@ EIP712("OpenLeverage Limit Order", "1"), IOPLimitOrder, OPLimitOrderStorage
 
     }
 
-    function orderId(Order memory order) external override view returns (bytes32) {
-        return _orderId(order);
-    }
-
-    function hashOpenOrder(OPLimitOrderStorage.OpenOrder memory order) external override view returns (bytes32){
-        return _hashOpenOrder(order);
-    }
-
-    function hashCloseOrder(OPLimitOrderStorage.CloseOrder memory order) external override view returns (bytes32){
-        return _hashCloseOrder(order);
-    }
-
     function _orderId(Order memory order) internal view returns (bytes32) {
         return _hashTypedDataV4(
             keccak256(
                 abi.encode(
-                    STATIC_ORDER_TYPEHASH,
+                    ORDER_TYPEHASH,
                     order
                 )
             )
