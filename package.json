@@ -1,27 +1,44 @@
 {
   "name": "open-order-contracts",
   "version": "1.0.0",
-  "description": "Limit Order protocol to support any token, any AMM-based DEX, all EVM-compatible chains.",
-  "main": "truffle-config.js",
+  "description": "",
   "directories": {
     "test": "test"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "truffle test",
+    "merge-contracts": "sol-merger --export-plugin SPDXLicenseRemovePlugin \\\"./contracts/*.sol\\\" ./build && sol-merger --export-plugin SPDXLicenseRemovePlugin \\\"./contracts/dex/*.sol\\\" ./build/dex && sol-merger --export-plugin SPDXLicenseRemovePlugin \\\"./contracts/farming/*.sol\\\" ./build/farming && sol-merger --export-plugin SPDXLicenseRemovePlugin \\\"./contracts/gov/*.sol\\\" ./build/gov && sol-merger --export-plugin SPDXLicenseRemovePlugin \\\"./contracts/liquidity/*.sol\\\" ./build/liquidity && sol-merger --export-plugin SPDXLicenseRemovePlugin \\\"contracts/mocks/*.sol\\\" ./build/test",
+    "posttest": "docker stop testrpc"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/OpenLeverageDev/open-order-contracts.git"
-  },
-  "keywords": [],
   "author": "",
   "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/OpenLeverageDev/open-order-contracts/issues"
-  },
-  "homepage": "https://github.com/OpenLeverageDev/open-order-contracts#readme",
   "dependencies": {
-    "@openzeppelin/contracts": "^4.5.0",
-    "ganache-cli": "^6.12.2"
+    "@openzeppelin/contracts": "4.7.0",
+    "@openzeppelin/test-helpers": "^0.5.15",
+    "@uniswap/v2-core": "^1.0.1",
+    "@uniswap/v2-periphery": "^1.1.0-beta.0",
+    "@uniswap/v3-periphery": "^1.1.0",
+    "bignumber.js": "^1.5.0",
+    "eth-sig-util": "^3.0.1",
+    "ethereumjs-util": "^7.1.5",
+    "ethers": "^5.5.1",
+    "ganache-cli": "6.12.2",
+    "ganache-time-traveler": "^1.0.15",
+    "keccak256": "^1.0.3",
+    "lodash.template": "^4.5.0",
+    "merkletreejs": "^0.2.24",
+    "solc": "^0.7.6",
+    "truffle": "^5.4.7",
+    "truffle-contract-size": "^2.0.1"
+  },
+  "bundleDependencies": false,
+  "devDependencies": {
+    "@truffle/hdwallet-provider": "^1.7.0",
+    "eth-gas-reporter": "^0.2.20",
+    "mocha-logger": "^1.0.7",
+    "sol-merger": "^3.1.0",
+    "solidity-coverage": "^0.7.16",
+    "truffle-plugin-stdjsonin": "github:mhrsalehi/truffle-plugin-stdjsonin",
+    "truffle-plugin-verify": "^0.5.18"
   }
 }
