@@ -34,16 +34,6 @@ EIP712("OpenLeverage Limit Order", "1"), IOPLimitOrder, OPLimitOrderStorage
         dexAgg = _dexAgg;
     }
 
-    function remaining(bytes32 _orderId) external override view returns (uint256){
-        uint256 amount = _remaining[_orderId];
-        require(amount != _ORDER_DOES_NOT_EXIST, "UKO");
-        amount -= 1;
-        return amount;
-    }
-
-    function remainingRaw(bytes32 _orderId) external override view returns (uint256){
-        return _remaining[_orderId];
-    }
 
     function fillOpenOrder(OpenOrder memory order, bytes calldata signature, uint256 fillingDeposit, bytes memory dexData) external override nonReentrant {
         require(block.timestamp <= order.deadline, 'EXR');
@@ -138,6 +128,17 @@ EIP712("OpenLeverage Limit Order", "1"), IOPLimitOrder, OPLimitOrderStorage
         for (uint i = 0; i < orders.length; i++) {
             _cancelOrder(orders[i]);
         }
+    }
+
+    function remaining(bytes32 _orderId) external override view returns (uint256){
+        uint256 amount = _remaining[_orderId];
+        require(amount != _ORDER_DOES_NOT_EXIST, "UKO");
+        amount -= 1;
+        return amount;
+    }
+
+    function remainingRaw(bytes32 _orderId) external override view returns (uint256){
+        return _remaining[_orderId];
     }
 
     function _cancelOrder(Order memory order) internal {

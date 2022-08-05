@@ -74,10 +74,6 @@ abstract contract OPLimitOrderStorage {
 
 interface IOPLimitOrder {
 
-    function remaining(bytes32 _orderId) external view returns (uint256);
-
-    function remainingRaw(bytes32 _orderId) external view returns (uint256);
-
     function fillOpenOrder(OPLimitOrderStorage.OpenOrder memory order, bytes calldata signature, uint256 fillingDeposit, bytes memory dexData) external;
 
     function fillCloseOrder(OPLimitOrderStorage.CloseOrder memory order, bytes calldata signature, uint256 fillingHeld, bytes memory dexData) external;
@@ -87,6 +83,10 @@ interface IOPLimitOrder {
     function cancelOrder(OPLimitOrderStorage.Order memory order) external;
 
     function cancelOrders(OPLimitOrderStorage.Order[] memory orders) external;
+
+    function remaining(bytes32 _orderId) external view returns (uint256);
+
+    function remainingRaw(bytes32 _orderId) external view returns (uint256);
 
     function orderId(OPLimitOrderStorage.Order memory order) external view returns (bytes32);
 
