@@ -198,7 +198,7 @@ contract("OPLimitOrder", async accounts => {
         const order = openOrder2Order(openOrder);
         let tx = await limitOrder.cancelOrder(order, {from: trader});
         m.log("Cancel open order gas used =", tx.receipt.gasUsed);
-        expect((await limitOrder.remainingRaw(await limitOrder.orderId(order))).toString()).equal('1');
+        expect((await limitOrder.remainingRaw(await limitOrder.getOrderId(order))).toString()).equal('1');
     })
 
     it("create and cancel close order", async () => {
@@ -206,7 +206,7 @@ contract("OPLimitOrder", async accounts => {
         const order = closeOrder2Order(closeOrder);
         let tx = await limitOrder.cancelOrder(order, {from: trader});
         m.log("Cancel close order gas used =", tx.receipt.gasUsed);
-        expect((await limitOrder.remainingRaw(await limitOrder.orderId(order))).toString()).equal('1');
+        expect((await limitOrder.remainingRaw(await limitOrder.getOrderId(order))).toString()).equal('1');
     })
 
     it("cancel orders batch", async () => {
@@ -217,10 +217,10 @@ contract("OPLimitOrder", async accounts => {
         let orders = [openOrder2Order(openOrder1), openOrder2Order(openOrder2), closeOrder2Order(closeOrder1), closeOrder2Order(closeOrder2)];
         let tx = await limitOrder.cancelOrders(orders, {from: trader});
         m.log("Cancel 4 orders gas used =", tx.receipt.gasUsed);
-        expect((await limitOrder.remainingRaw(await limitOrder.orderId(openOrder2Order(openOrder1)))).toString()).equal('1');
-        expect((await limitOrder.remainingRaw(await limitOrder.orderId(openOrder2Order(openOrder2)))).toString()).equal('1');
-        expect((await limitOrder.remainingRaw(await limitOrder.orderId(closeOrder2Order(closeOrder1)))).toString()).equal('1');
-        expect((await limitOrder.remainingRaw(await limitOrder.orderId(closeOrder2Order(closeOrder2)))).toString()).equal('1');
+        expect((await limitOrder.remainingRaw(await limitOrder.getOrderId(openOrder2Order(openOrder1)))).toString()).equal('1');
+        expect((await limitOrder.remainingRaw(await limitOrder.getOrderId(openOrder2Order(openOrder2)))).toString()).equal('1');
+        expect((await limitOrder.remainingRaw(await limitOrder.getOrderId(closeOrder2Order(closeOrder1)))).toString()).equal('1');
+        expect((await limitOrder.remainingRaw(await limitOrder.getOrderId(closeOrder2Order(closeOrder2)))).toString()).equal('1');
     })
 
     it("fill open order in 'EXR' error case", async () => {
@@ -504,8 +504,8 @@ contract("OPLimitOrder", async accounts => {
         await openLev.setDepositReturn(expectReturn);
         await limitOrder.closeTradeAndCancel(0, false, closeHeld, 0, '0x', orders, {from: trader});
         expect((await token0.balanceOf(trader)).toString()).equal('2');
-        expect((await limitOrder.remainingRaw(await limitOrder.orderId(closeOrder2Order(closeOrder1)))).toString()).equal('1');
-        expect((await limitOrder.remainingRaw(await limitOrder.orderId(closeOrder2Order(closeOrder2)))).toString()).equal('1');
+        expect((await limitOrder.remainingRaw(await limitOrder.getOrderId(closeOrder2Order(closeOrder1)))).toString()).equal('1');
+        expect((await limitOrder.remainingRaw(await limitOrder.getOrderId(closeOrder2Order(closeOrder2)))).toString()).equal('1');
     })
 
     it("initialize in 'NAD' error case", async () => {

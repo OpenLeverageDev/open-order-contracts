@@ -36,18 +36,23 @@ contract MockOpenLev is OpenLevInterface {
         market = _markets[_marketId];
     }
 
-    function activeTrades(address trader, uint16 marketId, bool longToken) external view returns (Trade memory trade){
-        trade = _activeTrades[trader][marketId][longToken];
+    function activeTrades(address trader, uint16 _marketId, bool longToken) external view returns (Trade memory trade){
+
+        trade = _activeTrades[trader][_marketId][longToken];
     }
 
-    function updatePrice(uint16 marketId, bytes memory dexData) external override {
-        OpenLevInterface.Market memory market = _markets[marketId];
+    function updatePrice(uint16 _marketId, bytes memory dexData) external override {
+        dexData;
+        OpenLevInterface.Market memory market = _markets[_marketId];
         dexAgg.updatePriceOracle(market.token0, market.token1, 60, hex'00');
     }
 
-    function marginTradeFor(address trader, uint16 marketId, bool longToken, bool depositToken, uint deposit, uint borrow, uint minBuyAmount, bytes memory dexData) external override payable returns (uint256){
-        depositToken == false ? IERC20(_markets[marketId].token0).transferFrom(msg.sender, address(this), deposit) : IERC20(_markets[marketId].token1).transferFrom(msg.sender, address(this), deposit);
-        Trade storage trade = _activeTrades[trader][marketId][longToken];
+    function marginTradeFor(address trader, uint16 _marketId, bool longToken, bool depositToken, uint deposit, uint borrow, uint minBuyAmount, bytes memory dexData) external override payable returns (uint256){
+        borrow;
+        minBuyAmount;
+        dexData;
+        depositToken == false ? IERC20(_markets[_marketId].token0).transferFrom(msg.sender, address(this), deposit) : IERC20(_markets[_marketId].token1).transferFrom(msg.sender, address(this), deposit);
+        Trade storage trade = _activeTrades[trader][_marketId][longToken];
         trade.held += newHeld;
         trade.depositToken = depositToken;
         trade.deposited += deposit;
@@ -55,11 +60,13 @@ contract MockOpenLev is OpenLevInterface {
         return newHeld;
     }
 
-    function closeTradeFor(address trader, uint16 marketId, bool longToken, uint closeHeld, uint minOrMaxAmount, bytes memory dexData) external override returns (uint256){
-        Trade storage trade = _activeTrades[trader][marketId][longToken];
-        trade.depositToken == false ? IERC20(_markets[marketId].token0).transfer(trader, depositReturn) : IERC20(_markets[marketId].token1).transfer(trader, depositReturn);
+    function closeTradeFor(address trader, uint16 _marketId, bool longToken, uint closeHeld, uint minOrMaxAmount, bytes memory dexData) external override returns (uint256){
+        minOrMaxAmount;
+        dexData;
+        Trade storage trade = _activeTrades[trader][_marketId][longToken];
+        trade.depositToken == false ? IERC20(_markets[_marketId].token0).transfer(trader, depositReturn) : IERC20(_markets[_marketId].token1).transfer(trader, depositReturn);
         if (trade.held == closeHeld) {
-            delete _activeTrades[trader][marketId][longToken];
+            delete _activeTrades[trader][_marketId][longToken];
         } else {
             trade.held -= closeHeld;
             trade.deposited -= trade.deposited * closeHeld / trade.held;
