@@ -25,7 +25,7 @@ EIP712("OpenLeverage Limit Order", "1"), IOPLimitOrder, OPLimitOrderStorage
     uint256 constant private _ORDER_FILLED = 1;
 
     /// @notice Stores unfilled amounts for each order plus one.
-    /// Therefore 0 means order doesn't exist and 1 means order was filled
+    /// Therefore "0" means order doesn't exist and "1" means order has been filled
     mapping(bytes32 => uint256) private _remaining;
 
 
@@ -44,7 +44,7 @@ EIP712("OpenLeverage Limit Order", "1"), IOPLimitOrder, OPLimitOrderStorage
     /// @dev Successful execution requires two conditions at least
     ///1. The real-time price is lower than the buying price
     ///2. The increased position held is greater than expect held
-    function fillOpenOrder(OpenOrder memory order, bytes calldata signature, uint256 fillingDeposit, bytes memory dexData) external override nonReentrant {
+    function fillOpenOrder(OpenOrder memory order, bytes calldata signature, uint256 fillingDeposit, bytes calldata dexData) external override nonReentrant {
         require(block.timestamp <= order.deadline, 'EXR');
         bytes32 orderId = _openOrderId(order);
         uint256 remainingDeposit = _remaining[orderId];
@@ -52,7 +52,7 @@ EIP712("OpenLeverage Limit Order", "1"), IOPLimitOrder, OPLimitOrderStorage
         if (remainingDeposit == _ORDER_DOES_NOT_EXIST) {
             remainingDeposit = order.deposit;
         } else {
-            remainingDeposit -= 1;
+            --remainingDeposit;
         }
         require(fillingDeposit <= remainingDeposit, 'FTB');
         require(SignatureChecker.isValidSignatureNow(order.owner, _hashOpenOrder(order), signature), "SNE");

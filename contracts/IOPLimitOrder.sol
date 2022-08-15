@@ -27,7 +27,7 @@ abstract contract OPLimitOrderStorage {
     struct OpenOrder {
         uint256 salt;
         address owner;
-        uint32 deadline;
+        uint32 deadline; // in seconds
         uint16 marketId;
         bool longToken;
         bool depositToken;
