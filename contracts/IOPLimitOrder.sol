@@ -8,6 +8,10 @@ import "./IOPLimitOrder.sol";
 
 abstract contract OPLimitOrderStorage {
 
+    event OrderCanceled(address indexed trader, bytes32 orderId, uint256 remaining);
+
+    event OrderFilled(address indexed trader, bytes32 orderId, uint256 commission, uint256 remaining, uint256 filling);
+
     struct Order {
         uint256 salt;
         address owner;
@@ -17,7 +21,7 @@ abstract contract OPLimitOrderStorage {
         bool depositToken;
         address commissionToken;
         uint256 commission;
-        uint256 price0;// scale 10**18
+        uint256 price0;// tokanA-tokenB pair, the price of tokenA relative to tokenB, scale 10**18.
     }
 
     struct OpenOrder {
@@ -29,11 +33,11 @@ abstract contract OPLimitOrderStorage {
         bool depositToken;
         address commissionToken;
         uint256 commission;
-        uint256 price0;// scale 10**18
+        uint256 price0;
 
-        uint256 deposit;
-        uint256 borrow;
-        uint256 expectHeld;
+        uint256 deposit;// the deposit amount for margin trade.
+        uint256 borrow;// the borrow amount for margin trade.
+        uint256 expectHeld;// the minimum position held after gets filled.
     }
 
     struct CloseOrder {
@@ -45,11 +49,11 @@ abstract contract OPLimitOrderStorage {
         bool depositToken;
         address commissionToken;
         uint256 commission;
-        uint256 price0;// scale 10**18
+        uint256 price0;
 
-        bool isStopLoss;
-        uint256 closeHeld;
-        uint256 expectReturn;
+        bool isStopLoss;// stopLoss or takeProfit.
+        uint256 closeHeld;// how many position will be closed.
+        uint256 expectReturn;// the minimum deposit returns after gets filled.
     }
 
     bytes32 constant public ORDER_TYPEHASH = keccak256(
@@ -64,11 +68,6 @@ abstract contract OPLimitOrderStorage {
 
     OpenLevInterface public openLev;
     DexAggregatorInterface public dexAgg;
-
-    event OrderCanceled(address indexed trader, bytes32 orderId, uint256 remaining);
-
-    event OrderFilled(address indexed trader, bytes32 orderId, uint256 commission, uint256 remaining, uint256 filling);
-
 
 }
 
