@@ -19,7 +19,7 @@ EIP712("OpenLeverage Limit Order", "1"), IOPLimitOrder, OPLimitOrderStorage
     uint256 constant private MILLION = 10 ** 6;
     uint256 constant private QUINTILLION = 18;
 
-    uint32 constant private TWAP = 60;
+    uint32 constant private TWAP = 60;// seconds
 
     uint256 constant private _ORDER_DOES_NOT_EXIST = 0;
     uint256 constant private _ORDER_FILLED = 1;
@@ -28,6 +28,7 @@ EIP712("OpenLeverage Limit Order", "1"), IOPLimitOrder, OPLimitOrderStorage
     /// Therefore 0 means order doesn't exist and 1 means order was filled
     mapping(bytes32 => uint256) private _remaining;
 
+
     function initialize(OpenLevInterface _openLev, DexAggregatorInterface _dexAgg) external {
         require(msg.sender == admin, "NAD");
         openLev = _openLev;
@@ -35,6 +36,14 @@ EIP712("OpenLeverage Limit Order", "1"), IOPLimitOrder, OPLimitOrderStorage
     }
 
 
+    /// @notice Fills open order
+    /// @param order Order quote to fill
+    /// @param signature Signature to confirm quote ownership
+    /// @param fillingDeposit the deposit amount to margin trade
+    /// @param dexData The dex data for openLev
+    /// @dev Successful execution requires two conditions at least
+    ///1. The real-time price is lower than the buying price
+    ///2. The increased position held is greater than expect held
     function fillOpenOrder(OpenOrder memory order, bytes calldata signature, uint256 fillingDeposit, bytes memory dexData) external override nonReentrant {
         require(block.timestamp <= order.deadline, 'EXR');
         bytes32 orderId = _openOrderId(order);
@@ -59,9 +68,10 @@ EIP712("OpenLeverage Limit Order", "1"), IOPLimitOrder, OPLimitOrderStorage
         address depositToken = order.depositToken ? market.token1 : market.token0;
         IERC20(depositToken).transferFrom(order.owner, address(this), fillingDeposit);
         IERC20(depositToken).safeApprove(address(openLev), fillingDeposit);
-        //todo
-        uint newHeld = _marginTrade(order, fillingRatio, dexData);
-        require(newHeld * MILLION >= order.expectHeld * fillingRatio, 'NEG');
+
+        uint increaseHeld = _marginTrade(order, fillingRatio, dexData);
+        // check that increased position held is greater than expect held
+        require(increaseHeld * MILLION >= order.expectHeld * fillingRatio, 'NEG');
 
         uint commission = order.commission * fillingRatio / MILLION;
         if (commission > 0) {
@@ -72,6 +82,15 @@ EIP712("OpenLeverage Limit Order", "1"), IOPLimitOrder, OPLimitOrderStorage
         _remaining[orderId] = remainingDeposit + 1;
     }
 
+    /// @notice Fills close order
+    /// @param order Order quote to fill
+    /// @param signature Signature to confirm quote ownership
+    /// @param fillingHeld the position held to close trade
+    /// @param dexData The dex data for openLev
+    /// @dev Successful execution requires two conditions at least
+    ///1. The real-time price is higher than the selling price in take profit case or
+    ///   the twap price is lower than the selling price in stop loss case
+    ///2. The deposit return is greater than expect return
     function fillCloseOrder(CloseOrder memory order, bytes calldata signature, uint256 fillingHeld, bytes memory dexData) external override nonReentrant {
         require(block.timestamp <= order.deadline, 'EXR');
         bytes32 orderId = _closeOrderId(order);
@@ -88,13 +107,13 @@ EIP712("OpenLeverage Limit Order", "1"), IOPLimitOrder, OPLimitOrderStorage
         uint256 fillingRatio = fillingHeld * MILLION / order.closeHeld;
         require(fillingRatio > 0, 'FR0');
         OpenLevInterface.Market memory market = openLev.markets(order.marketId);
-        // stop profit
+        // take profit
         if (!order.isStopLoss) {
             uint256 price = _getPrice(market.token0, market.token1, dexData);
             // long token0 price higher than price0 or long token1 price lower than price0
             require((!order.longToken && price >= order.price0) || (order.longToken && price <= order.price0), 'PRE');
         }
-        // stop lose
+        // stop loss
         else {
             (uint256 price,uint256 cAvgPrice, uint256 hAvgPrice) = _getTwapPrice(market.token0, market.token1, dexData);
             require((!order.longToken && (price <= order.price0 && cAvgPrice <= order.price0 && hAvgPrice <= order.price0))
@@ -102,6 +121,7 @@ EIP712("OpenLeverage Limit Order", "1"), IOPLimitOrder, OPLimitOrderStorage
         }
 
         uint depositReturn = _closeTrade(order, fillingHeld, dexData);
+        // check that deposit return is greater than expect return
         require(depositReturn * MILLION >= order.expectReturn * fillingRatio, 'NEG');
 
         uint commission = order.commission * fillingRatio / MILLION;
@@ -114,6 +134,7 @@ EIP712("OpenLeverage Limit Order", "1"), IOPLimitOrder, OPLimitOrderStorage
         _remaining[orderId] = remainingHeld + 1;
     }
 
+    /// @notice Close trade and cancels stopLoss or takeProfit orders by owner
     function closeTradeAndCancel(uint16 marketId, bool longToken, uint closeHeld, uint minOrMaxAmount, bytes memory dexData, OPLimitOrderStorage.Order[] memory orders) external override nonReentrant {
         openLev.closeTradeFor(msg.sender, marketId, longToken, closeHeld, minOrMaxAmount, dexData);
         for (uint i = 0; i < orders.length; i++) {
@@ -121,16 +142,19 @@ EIP712("OpenLeverage Limit Order", "1"), IOPLimitOrder, OPLimitOrderStorage
         }
     }
 
+    /// @notice Cancels order by setting remaining amount to zero
     function cancelOrder(Order memory order) external override {
         _cancelOrder(order);
     }
 
+    /// @notice Same as `cancelOrder` but for multiple orders
     function cancelOrders(Order[] memory orders) external override {
         for (uint i = 0; i < orders.length; i++) {
             _cancelOrder(orders[i]);
         }
     }
 
+    /// @notice Returns unfilled amount for order. Throws if order does not exist
     function remaining(bytes32 _orderId) external override view returns (uint256){
         uint256 amount = _remaining[_orderId];
         require(amount != _ORDER_DOES_NOT_EXIST, "UKO");
@@ -138,18 +162,23 @@ EIP712("OpenLeverage Limit Order", "1"), IOPLimitOrder, OPLimitOrderStorage
         return amount;
     }
 
+    /// @notice Returns unfilled amount for order
+    /// @return Result Unfilled amount of order plus one if order exists. Otherwise 0
     function remainingRaw(bytes32 _orderId) external override view returns (uint256){
         return _remaining[_orderId];
     }
 
+    /// @notice Returns the order id
     function orderId(Order memory order) external override view returns (bytes32) {
         return _orderId(order);
     }
 
+    /// @notice Returns the open order hash
     function hashOpenOrder(OPLimitOrderStorage.OpenOrder memory order) external override view returns (bytes32){
         return _hashOpenOrder(order);
     }
 
+    /// @notice Returns the close order hash
     function hashCloseOrder(OPLimitOrderStorage.CloseOrder memory order) external override view returns (bytes32){
         return _hashCloseOrder(order);
     }
@@ -164,15 +193,17 @@ EIP712("OpenLeverage Limit Order", "1"), IOPLimitOrder, OPLimitOrderStorage
     }
 
 
+    /// @notice Call openLev to margin trade. returns the position held increasement.
     function _marginTrade(OPLimitOrderStorage.OpenOrder memory order, uint256 fillingRatio, bytes memory dexData) internal returns (uint256){
         return openLev.marginTradeFor(order.owner, order.marketId, order.longToken, order.depositToken,
             order.deposit * fillingRatio / MILLION, order.borrow * fillingRatio / MILLION, 0, dexData);
     }
-
+    /// @notice Call openLev to close trade. returns the deposit token amount back.
     function _closeTrade(OPLimitOrderStorage.CloseOrder memory order, uint256 fillingHeld, bytes memory dexData) internal returns (uint256){
         return openLev.closeTradeFor(order.owner, order.marketId, order.longToken, fillingHeld, order.longToken == order.depositToken ? type(uint256).max : 0, dexData);
     }
 
+    /// @notice Returns the twap price from dex aggregator.
     function _getTwapPrice(address token0, address token1, bytes memory dexData) internal view returns (uint256 price, uint256 cAvgPrice, uint256 hAvgPrice){
         uint8 decimals;
         uint256 lastUpdateTime;
@@ -193,6 +224,7 @@ EIP712("OpenLeverage Limit Order", "1"), IOPLimitOrder, OPLimitOrderStorage
 
     }
 
+    /// @notice Returns the real price from dex aggregator.
     function _getPrice(address token0, address token1, bytes memory dexData) internal view returns (uint256 price){
         uint8 decimals;
         (price, decimals) = dexAgg.getPrice(token0, token1, dexData);
