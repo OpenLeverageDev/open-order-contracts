@@ -7,4 +7,4 @@
 contracts/*/artifacts
 /contracts/*/*/artifacts
 
-.idea/*
+/.idea/
