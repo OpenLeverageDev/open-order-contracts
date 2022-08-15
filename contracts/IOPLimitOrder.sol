@@ -47,7 +47,7 @@ abstract contract OPLimitOrderStorage {
         uint256 commission;
         uint256 price0;// scale 10**18
 
-        bool isStopLose;
+        bool isStopLoss;
         uint256 closeHeld;
         uint256 expectReturn;
     }
@@ -59,7 +59,7 @@ abstract contract OPLimitOrderStorage {
         "OpenOrder(uint256 salt,address owner,uint32 deadline,uint16 marketId,bool longToken,bool depositToken,address commissionToken,uint256 commission,uint256 price0,uint256 deposit,uint256 borrow,uint256 expectHeld)"
     );
     bytes32 constant public CLOSE_ORDER_TYPEHASH = keccak256(
-        "CloseOrder(uint256 salt,address owner,uint32 deadline,uint16 marketId,bool longToken,bool depositToken,address commissionToken,uint256 commission,uint256 price0,bool isStopLose,uint256 closeHeld,uint256 expectReturn)"
+        "CloseOrder(uint256 salt,address owner,uint32 deadline,uint16 marketId,bool longToken,bool depositToken,address commissionToken,uint256 commission,uint256 price0,bool isStopLoss,uint256 closeHeld,uint256 expectReturn)"
     );
 
     OpenLevInterface public openLev;

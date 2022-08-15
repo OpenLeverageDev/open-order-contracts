@@ -76,18 +76,18 @@ contract("OPLimitOrder", async accounts => {
     function buildCloseOrder(closeHeld = 1,
                              expectReturn = 1,
                              price0 = 0,
-                             isStopLose = false,
+                             isStopLoss = false,
                              deadline = 4294967295,
                              longToken = false,
                              commission = 1) {
-        return buildCloseOrderWithSalt("1", closeHeld, expectReturn, price0, isStopLose, deadline, longToken, commission);
+        return buildCloseOrderWithSalt("1", closeHeld, expectReturn, price0, isStopLoss, deadline, longToken, commission);
     }
 
     function buildCloseOrderWithSalt(salt,
                                      closeHeld = 1,
                                      expectReturn = 1,
                                      price0 = 0,
-                                     isStopLose = false,
+                                     isStopLoss = false,
                                      deadline = 4294967295,
                                      longToken = false,
                                      commission = 1) {
@@ -101,7 +101,7 @@ contract("OPLimitOrder", async accounts => {
             commissionToken: commissionToken.address,
             commission: commission,
             price0: price0,
-            isStopLose: isStopLose,
+            isStopLoss: isStopLoss,
             closeHeld: closeHeld,
             expectReturn: expectReturn
         }
@@ -117,7 +117,7 @@ contract("OPLimitOrder", async accounts => {
 
     function closeOrder2Order(closeOrder) {
         let order = Object.assign({}, closeOrder);
-        delete order.isStopLose;
+        delete order.isStopLoss;
         delete order.closeHeld;
         delete order.expectReturn;
         return order;

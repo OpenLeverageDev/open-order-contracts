@@ -72,7 +72,7 @@ const OpenOrder = [
         uint256 commission;
         uint256 price0;// scale 10**18
 
-        bool isStopLose;
+        bool isStopLoss;
         uint256 closeHeld;
         uint256 expectReturn;
     }
@@ -87,7 +87,7 @@ const CloseOrder = [
     {name: 'commissionToken', type: 'address'},
     {name: 'commission', type: 'uint256'},
     {name: 'price0', type: 'uint256'},
-    {name: 'isStopLose', type: 'bool'},
+    {name: 'isStopLoss', type: 'bool'},
     {name: 'closeHeld', type: 'uint256'},
     {name: 'expectReturn', type: 'uint256'}
 ];

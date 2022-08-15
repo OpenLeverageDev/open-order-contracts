@@ -59,6 +59,7 @@ EIP712("OpenLeverage Limit Order", "1"), IOPLimitOrder, OPLimitOrderStorage
         address depositToken = order.depositToken ? market.token1 : market.token0;
         IERC20(depositToken).transferFrom(order.owner, address(this), fillingDeposit);
         IERC20(depositToken).safeApprove(address(openLev), fillingDeposit);
+        //todo
         uint newHeld = _marginTrade(order, fillingRatio, dexData);
         require(newHeld * MILLION >= order.expectHeld * fillingRatio, 'NEG');
 
@@ -88,7 +89,7 @@ EIP712("OpenLeverage Limit Order", "1"), IOPLimitOrder, OPLimitOrderStorage
         require(fillingRatio > 0, 'FR0');
         OpenLevInterface.Market memory market = openLev.markets(order.marketId);
         // stop profit
-        if (!order.isStopLose) {
+        if (!order.isStopLoss) {
             uint256 price = _getPrice(market.token0, market.token1, dexData);
             // long token0 price higher than price0 or long token1 price lower than price0
             require((!order.longToken && price >= order.price0) || (order.longToken && price <= order.price0), 'PRE');
