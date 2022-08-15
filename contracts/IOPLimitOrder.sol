@@ -87,7 +87,7 @@ interface IOPLimitOrder {
 
     function remainingRaw(bytes32 _orderId) external view returns (uint256);
 
-    function orderId(OPLimitOrderStorage.Order memory order) external view returns (bytes32);
+    function getOrderId(OPLimitOrderStorage.Order memory order) external view returns (bytes32);
 
     function hashOpenOrder(OPLimitOrderStorage.OpenOrder memory order) external view returns (bytes32);
 

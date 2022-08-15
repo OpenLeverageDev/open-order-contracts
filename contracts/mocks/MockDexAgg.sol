@@ -14,6 +14,7 @@ contract MockDexAgg is DexAggregatorInterface {
     uint private _cAvgPrice;
     uint private _hAvgPrice;
     uint private _timestamp;
+    uint private _timeWindow;
 
 
     function setPrice(uint price_, uint cAvgPrice_, uint hAvgPrice_, uint timestamp_) external {
@@ -25,12 +26,19 @@ contract MockDexAgg is DexAggregatorInterface {
 
     function getPrice(address desToken, address quoteToken, bytes memory data) external override view
     returns (uint256 price, uint8 decimals){
+        desToken;
+        quoteToken;
+        data;
         price = _price;
         decimals = _decimals;
     }
 
     function getPriceCAvgPriceHAvgPrice(address desToken, address quoteToken, uint32 secondsAgo, bytes memory dexData) external override view
     returns (uint price, uint cAvgPrice, uint256 hAvgPrice, uint8 decimals, uint256 timestamp){
+        desToken;
+        quoteToken;
+        secondsAgo;
+        dexData;
         price = _price;
         cAvgPrice = _cAvgPrice;
         hAvgPrice = _hAvgPrice;
@@ -39,6 +47,10 @@ contract MockDexAgg is DexAggregatorInterface {
     }
 
     function updatePriceOracle(address desToken, address quoteToken, uint32 timeWindow, bytes memory data) external override returns (bool){
+        desToken;
+        quoteToken;
+        data;
+        _timeWindow = timeWindow;
         return true;
     }
 

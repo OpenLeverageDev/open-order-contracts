@@ -169,8 +169,8 @@ EIP712("OpenLeverage Limit Order", "1"), IOPLimitOrder, OPLimitOrderStorage
     }
 
     /// @notice Returns the order id
-    function orderId(Order memory order) external override view returns (bytes32) {
-        return _orderId(order);
+    function getOrderId(Order memory order) external override view returns (bytes32) {
+        return _getOrderId(order);
     }
 
     /// @notice Returns the open order hash
@@ -185,7 +185,7 @@ EIP712("OpenLeverage Limit Order", "1"), IOPLimitOrder, OPLimitOrderStorage
 
     function _cancelOrder(Order memory order) internal {
         require(order.owner == msg.sender, "OON");
-        bytes32 orderId = _orderId(order);
+        bytes32 orderId = _getOrderId(order);
         uint256 orderRemaining = _remaining[orderId];
         require(orderRemaining != _ORDER_FILLED, "ALF");
         emit OrderCanceled(msg.sender, orderId, orderRemaining);
@@ -236,7 +236,7 @@ EIP712("OpenLeverage Limit Order", "1"), IOPLimitOrder, OPLimitOrderStorage
 
     }
 
-    function _orderId(Order memory order) internal view returns (bytes32) {
+    function _getOrderId(Order memory order) internal view returns (bytes32) {
         return _hashTypedDataV4(
             keccak256(
                 abi.encode(
@@ -252,7 +252,7 @@ EIP712("OpenLeverage Limit Order", "1"), IOPLimitOrder, OPLimitOrderStorage
         assembly {// solhint-disable-line no-inline-assembly
             order := openOrder
         }
-        return _orderId(order);
+        return _getOrderId(order);
     }
 
     function _closeOrderId(CloseOrder memory closeOrder) internal view returns (bytes32) {
@@ -260,7 +260,7 @@ EIP712("OpenLeverage Limit Order", "1"), IOPLimitOrder, OPLimitOrderStorage
         assembly {// solhint-disable-line no-inline-assembly
             order := closeOrder
         }
-        return _orderId(order);
+        return _getOrderId(order);
     }
 
     function _hashOpenOrder(OpenOrder memory order) internal view returns (bytes32) {
