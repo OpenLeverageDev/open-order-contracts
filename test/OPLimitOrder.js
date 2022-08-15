@@ -441,7 +441,7 @@ contract("OPLimitOrder", async accounts => {
         order = buildCloseOrder(closeHeld, expectReturn, 2, false, 4294967295, true);
         data = buildCloseOrderData(chainId, limitOrder.address, order);
         signature = ethSigUtil.signTypedMessage(privatekey, {data: data});
-        dexAgg.setPrice(3, 1, 1, 0);
+        await dexAgg.setPrice(3, 1, 1, 0);
         await expectRevert(
             limitOrder.fillCloseOrder(order, signature, closeHeld, dexData, {from: bot}),
             'PRE',
