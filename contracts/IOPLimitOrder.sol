@@ -81,7 +81,7 @@ interface IOPLimitOrder {
 
     function cancelOrder(OPLimitOrderStorage.Order memory order) external;
 
-    function cancelOrders(OPLimitOrderStorage.Order[] memory orders) external;
+    function cancelOrders(OPLimitOrderStorage.Order[] calldata orders) external;
 
     function remaining(bytes32 _orderId) external view returns (uint256);
 

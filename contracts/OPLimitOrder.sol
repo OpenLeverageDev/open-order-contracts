@@ -148,7 +148,7 @@ EIP712("OpenLeverage Limit Order", "1"), IOPLimitOrder, OPLimitOrderStorage
     }
 
     /// @notice Same as `cancelOrder` but for multiple orders
-    function cancelOrders(Order[] memory orders) external override {
+    function cancelOrders(Order[] calldata orders) external override {
         for (uint i = 0; i < orders.length; i++) {
             _cancelOrder(orders[i]);
         }
