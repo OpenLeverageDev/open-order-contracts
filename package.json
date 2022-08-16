@@ -8,6 +8,7 @@
   "scripts": {
     "test": "truffle test",
     "merge-contracts": "sol-merger --export-plugin SPDXLicenseRemovePlugin \\\"./contracts/*.sol\\\" ./build && sol-merger --export-plugin SPDXLicenseRemovePlugin \\\"./contracts/dex/*.sol\\\" ./build/dex && sol-merger --export-plugin SPDXLicenseRemovePlugin \\\"./contracts/farming/*.sol\\\" ./build/farming && sol-merger --export-plugin SPDXLicenseRemovePlugin \\\"./contracts/gov/*.sol\\\" ./build/gov && sol-merger --export-plugin SPDXLicenseRemovePlugin \\\"./contracts/liquidity/*.sol\\\" ./build/liquidity && sol-merger --export-plugin SPDXLicenseRemovePlugin \\\"contracts/mocks/*.sol\\\" ./build/test",
+    "prettier": "prettier --write 'contracts/**/*.sol'",
     "posttest": "docker stop testrpc"
   },
   "author": "",
@@ -37,6 +38,8 @@
     "@truffle/hdwallet-provider": "^1.7.0",
     "eth-gas-reporter": "^0.2.20",
     "mocha-logger": "^1.0.7",
+    "prettier": "^2.7.1",
+    "prettier-plugin-solidity": "^1.0.0-beta.24",
     "sol-merger": "^3.1.0",
     "solidity-coverage": "^0.7.16",
     "truffle-plugin-stdjsonin": "github:mhrsalehi/truffle-plugin-stdjsonin",

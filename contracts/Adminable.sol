@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: BUSL-1.1
 
-
-pragma solidity > 0.7.6;
+pragma solidity >0.7.6;
 
 abstract contract Adminable {
     address payable public admin;
@@ -11,7 +10,8 @@ abstract contract Adminable {
     event NewPendingAdmin(address oldPendingAdmin, address newPendingAdmin);
 
     event NewAdmin(address oldAdmin, address newAdmin);
-    constructor () {
+
+    constructor() {
         developer = payable(msg.sender);
     }
 
@@ -45,5 +45,4 @@ abstract contract Adminable {
         emit NewAdmin(oldAdmin, admin);
         emit NewPendingAdmin(oldPendingAdmin, pendingAdmin);
     }
-
 }
