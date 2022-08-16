@@ -19,6 +19,7 @@
     "@uniswap/v2-periphery": "^1.1.0-beta.0",
     "@uniswap/v3-periphery": "^1.1.0",
     "bignumber.js": "^1.5.0",
+    "cloc": "^2.10.0",
     "eth-sig-util": "^3.0.1",
     "ethereumjs-util": "^7.1.5",
     "ethers": "^5.5.1",
