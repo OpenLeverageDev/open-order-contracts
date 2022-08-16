@@ -69,9 +69,10 @@ contract OPLimitOrder is DelegateInterface, Adminable, ReentrancyGuard, EIP712("
         IERC20(depositToken).transferFrom(order.owner, address(this), fillingDeposit);
         IERC20(depositToken).safeApprove(address(openLev), fillingDeposit);
 
-        uint256 increaseHeld = _marginTrade(order, fillingDeposit, fillingRatio, dexData);
-        // check that increased position held is greater than expect held
-        require(increaseHeld * MILLION >= order.expectHeld * fillingRatio, "NEG");
+        uint256 increasePosition = _marginTrade(order, fillingDeposit, fillingRatio, dexData);
+
+        // check that increased position is greater than expected increased held
+        require(increasePosition * MILLION >= order.expectHeld * fillingRatio, "NEG");
 
         uint256 commission = (order.commission * fillingRatio) / MILLION;
         if (commission > 0) {
@@ -85,16 +86,16 @@ contract OPLimitOrder is DelegateInterface, Adminable, ReentrancyGuard, EIP712("
     /// @notice Fills close order
     /// @param order Order quote to fill
     /// @param signature Signature to confirm quote ownership
-    /// @param fillingHeld the position held to close trade
+    /// @param closeAmount the position held to close trade
     /// @param dexData The dex data for openLev
     /// @dev Successful execution requires two conditions at least
-    ///1. The real-time price is higher than the selling price in take profit case or
-    ///   the twap price is lower than the selling price in stop loss case
-    ///2. The deposit return is greater than expect return
+    ///1. Take profit order: the real-time price is higher than the selling price, or
+    ///2. Stop loss order: the TWAP price is lower than the selling price
+    ///3. The deposit return is greater than expect return
     function fillCloseOrder(
         CloseOrder memory order,
         bytes calldata signature,
-        uint256 fillingHeld,
+        uint256 closeAmount,
         bytes memory dexData
     ) external override nonReentrant {
         require(block.timestamp <= order.deadline, "EXR");
@@ -106,16 +107,18 @@ contract OPLimitOrder is DelegateInterface, Adminable, ReentrancyGuard, EIP712("
         } else {
             --remainingHeld;
         }
-        require(fillingHeld <= remainingHeld, "FTB");
+        require(closeAmount <= remainingHeld, "FTB");
         require(SignatureChecker.isValidSignatureNow(order.owner, _hashCloseOrder(order), signature), "SNE");
 
-        uint256 fillingRatio = (fillingHeld * MILLION) / order.closeHeld;
+        uint256 fillingRatio = (closeAmount * MILLION) / order.closeHeld;
         require(fillingRatio > 0, "FR0");
         OpenLevInterface.Market memory market = openLev.markets(order.marketId);
+
         // take profit
         if (!order.isStopLoss) {
             uint256 price = _getPrice(market.token0, market.token1, dexData);
-            // long token0 price higher than price0 or long token1 price lower than price0
+            // long token0: price needs to be higher than price0
+            // long token1: price needs to be lower than price0
             require((!order.longToken && price >= order.price0) || (order.longToken && price <= order.price0), "PRE");
         }
         // stop loss
@@ -128,7 +131,7 @@ contract OPLimitOrder is DelegateInterface, Adminable, ReentrancyGuard, EIP712("
             );
         }
 
-        uint256 depositReturn = _closeTrade(order, fillingHeld, dexData);
+        uint256 depositReturn = _closeTrade(order, closeAmount, dexData);
         // check that deposit return is greater than expect return
         require(depositReturn * MILLION >= order.expectReturn * fillingRatio, "NEG");
 
@@ -137,8 +140,8 @@ contract OPLimitOrder is DelegateInterface, Adminable, ReentrancyGuard, EIP712("
             IERC20(order.commissionToken).transferFrom(order.owner, msg.sender, commission);
         }
 
-        remainingHeld = remainingHeld - fillingHeld;
-        emit OrderFilled(msg.sender, orderId, commission, fillingHeld, remainingHeld);
+        remainingHeld = remainingHeld - closeAmount;
+        emit OrderFilled(msg.sender, orderId, commission, closeAmount, remainingHeld);
         _remaining[orderId] = remainingHeld + 1;
     }
 

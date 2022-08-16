@@ -35,7 +35,7 @@ abstract contract OPLimitOrderStorage {
         uint256 price0;
         uint256 deposit; // the deposit amount for margin trade.
         uint256 borrow; // the borrow amount for margin trade.
-        uint256 expectHeld; // the minimum position held after gets filled.
+        uint256 expectHeld; // the minimum position held after the order gets fully filled.
     }
 
     struct CloseOrder {
@@ -48,7 +48,7 @@ abstract contract OPLimitOrderStorage {
         address commissionToken;
         uint256 commission;
         uint256 price0;
-        bool isStopLoss; // stopLoss or takeProfit.
+        bool isStopLoss; // true = stopLoss, false = takeProfit.
         uint256 closeHeld; // how many position will be closed.
         uint256 expectReturn; // the minimum deposit returns after gets filled.
     }
