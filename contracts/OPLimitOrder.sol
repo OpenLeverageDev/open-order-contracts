@@ -69,7 +69,7 @@ EIP712("OpenLeverage Limit Order", "1"), IOPLimitOrder, OPLimitOrderStorage
         IERC20(depositToken).transferFrom(order.owner, address(this), fillingDeposit);
         IERC20(depositToken).safeApprove(address(openLev), fillingDeposit);
 
-        uint increaseHeld = _marginTrade(order, fillingRatio, dexData);
+        uint increaseHeld = _marginTrade(order, fillingDeposit, fillingRatio, dexData);
         // check that increased position held is greater than expect held
         require(increaseHeld * MILLION >= order.expectHeld * fillingRatio, 'NEG');
 
@@ -194,9 +194,9 @@ EIP712("OpenLeverage Limit Order", "1"), IOPLimitOrder, OPLimitOrderStorage
 
 
     /// @notice Call openLev to margin trade. returns the position held increasement.
-    function _marginTrade(OPLimitOrderStorage.OpenOrder memory order, uint256 fillingRatio, bytes memory dexData) internal returns (uint256){
+    function _marginTrade(OPLimitOrderStorage.OpenOrder memory order, uint256 fillingDeposit, uint256 fillingRatio, bytes memory dexData) internal returns (uint256){
         return openLev.marginTradeFor(order.owner, order.marketId, order.longToken, order.depositToken,
-            order.deposit * fillingRatio / MILLION, order.borrow * fillingRatio / MILLION, 0, dexData);
+            fillingDeposit, order.borrow * fillingRatio / MILLION, 0, dexData);
     }
     /// @notice Call openLev to close trade. returns the deposit token amount back.
     function _closeTrade(OPLimitOrderStorage.CloseOrder memory order, uint256 fillingHeld, bytes memory dexData) internal returns (uint256){
