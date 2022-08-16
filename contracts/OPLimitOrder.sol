@@ -99,7 +99,7 @@ EIP712("OpenLeverage Limit Order", "1"), IOPLimitOrder, OPLimitOrderStorage
         if (remainingHeld == _ORDER_DOES_NOT_EXIST) {
             remainingHeld = order.closeHeld;
         } else {
-            remainingHeld -= 1;
+            --remainingHeld;
         }
         require(fillingHeld <= remainingHeld, 'FTB');
         require(SignatureChecker.isValidSignatureNow(order.owner, _hashCloseOrder(order), signature), "SNE");

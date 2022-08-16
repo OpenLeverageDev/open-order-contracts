@@ -31,6 +31,7 @@ jobs:
       - run: npm init -y
       - run: npm install truffle@5.5.2 -g
       - run: npm install ganache-cli -g
+      - run: npm install cloc -g
       - run: npm install
       - run: cloc contracts --by-file --exclude-dir mocks
       - run: truffle compile
