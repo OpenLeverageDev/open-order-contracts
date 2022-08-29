@@ -39,7 +39,7 @@ abstract contract Adminable {
         address oldAdmin = admin;
         address oldPendingAdmin = pendingAdmin;
         // Store admin with value pendingAdmin
-        admin = pendingAdmin;
+        admin = payable(oldPendingAdmin);
         // Clear the pending value
         pendingAdmin = payable(0);
         emit NewAdmin(oldAdmin, admin);

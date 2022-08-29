@@ -27,6 +27,7 @@ contract OPLimitOrder is DelegateInterface, Adminable, ReentrancyGuard, EIP712("
 
     function initialize(OpenLevInterface _openLev, DexAggregatorInterface _dexAgg) external {
         require(msg.sender == admin, "NAD");
+        require(address(openLev) == address(0), "IOC");
         openLev = _openLev;
         dexAgg = _dexAgg;
     }
@@ -65,9 +66,9 @@ contract OPLimitOrder is DelegateInterface, Adminable, ReentrancyGuard, EIP712("
         uint256 price = _getPrice(market.token0, market.token1, dexData);
         require((!order.longToken && price <= order.price0) || (order.longToken && price >= order.price0), "PRE");
 
-        address depositToken = order.depositToken ? market.token1 : market.token0;
-        IERC20(depositToken).transferFrom(order.owner, address(this), fillingDeposit);
-        IERC20(depositToken).safeApprove(address(openLev), fillingDeposit);
+        IERC20 depositToken = IERC20(order.depositToken ? market.token1 : market.token0);
+        depositToken.safeTransferFrom(order.owner, address(this), fillingDeposit);
+        depositToken.safeApprove(address(openLev), fillingDeposit);
 
         uint256 increasePosition = _marginTrade(order, fillingDeposit, fillingRatio, dexData);
 
@@ -76,7 +77,9 @@ contract OPLimitOrder is DelegateInterface, Adminable, ReentrancyGuard, EIP712("
 
         uint256 commission = (order.commission * fillingRatio) / MILLION;
         if (commission > 0) {
-            IERC20(order.commissionToken).transferFrom(order.owner, msg.sender, commission);
+            // fix stack too deep
+            IERC20 _commissionToken = IERC20(order.commissionToken);
+            _commissionToken.safeTransferFrom(order.owner, msg.sender, commission);
         }
         remainingDeposit = remainingDeposit - fillingDeposit;
         emit OrderFilled(msg.sender, orderId, commission, fillingDeposit, remainingDeposit);
@@ -137,7 +140,7 @@ contract OPLimitOrder is DelegateInterface, Adminable, ReentrancyGuard, EIP712("
 
         uint256 commission = (order.commission * fillingRatio) / MILLION;
         if (commission > 0) {
-            IERC20(order.commissionToken).transferFrom(order.owner, msg.sender, commission);
+            IERC20(order.commissionToken).safeTransferFrom(order.owner, msg.sender, commission);
         }
 
         remainingHeld = remainingHeld - closeAmount;
