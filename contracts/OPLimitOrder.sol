@@ -14,7 +14,7 @@ contract OPLimitOrder is DelegateInterface, Adminable, ReentrancyGuard, EIP712("
     using TransferHelper for IERC20;
 
     uint256 private constant MILLION = 10**6;
-    uint256 private constant QUINTILLION = 18;
+    uint256 private constant QUINTILLION = 24;
 
     uint32 private constant TWAP = 60; // seconds
 

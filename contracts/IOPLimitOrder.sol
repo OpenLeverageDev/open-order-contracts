@@ -20,7 +20,7 @@ abstract contract OPLimitOrderStorage {
         bool depositToken;
         address commissionToken;
         uint256 commission;
-        uint256 price0; // tokanA-tokenB pair, the price of tokenA relative to tokenB, scale 10**18.
+        uint256 price0; // tokanA-tokenB pair, the price of tokenA relative to tokenB, scale 10**24.
     }
 
     struct OpenOrder {
