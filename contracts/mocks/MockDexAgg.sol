@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 pragma experimental ABIEncoderV2;
 
 contract MockDexAgg is DexAggregatorInterface {
-    uint8 private constant _decimals = 18;
+    uint8 private constant _decimals = 24;
     uint256 private _price;
     uint256 private _cAvgPrice;
     uint256 private _hAvgPrice;
