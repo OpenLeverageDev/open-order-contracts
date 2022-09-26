@@ -14,7 +14,7 @@ contract OPLimitOrder is DelegateInterface, Adminable, ReentrancyGuard, EIP712("
     using TransferHelper for IERC20;
 
     uint256 private constant MILLION = 10**6;
-    uint256 private constant QUINTILLION = 24;
+    uint256 private constant DECIMAL = 24;
 
     uint32 private constant TWAP = 60; // seconds
 
@@ -67,13 +67,11 @@ contract OPLimitOrder is DelegateInterface, Adminable, ReentrancyGuard, EIP712("
         require((!order.longToken && price <= order.price0) || (order.longToken && price >= order.price0), "PRE");
 
         IERC20 depositToken = IERC20(order.depositToken ? market.token1 : market.token0);
-        depositToken.safeTransferFrom(order.owner, address(this), fillingDeposit);
-        depositToken.safeApprove(address(openLev), fillingDeposit);
-
-        uint256 increasePosition = _marginTrade(order, fillingDeposit, fillingRatio, dexData);
+        uint256 actualDepositAmount = depositToken.safeTransferFrom(order.owner, address(this), fillingDeposit);
+        depositToken.safeApprove(address(openLev), actualDepositAmount);
 
         // check that increased position is greater than expected increased held
-        require(increasePosition * MILLION >= order.expectHeld * fillingRatio, "NEG");
+        require(_marginTrade(order, actualDepositAmount, fillingRatio, dexData) * MILLION >= order.expectHeld * fillingRatio, "NEG");
 
         uint256 commission = (order.commission * fillingRatio) / MILLION;
         if (commission > 0) {
@@ -126,6 +124,7 @@ contract OPLimitOrder is DelegateInterface, Adminable, ReentrancyGuard, EIP712("
         }
         // stop loss
         else {
+            openLev.updatePrice(order.marketId, dexData);
             (uint256 price, uint256 cAvgPrice, uint256 hAvgPrice) = _getTwapPrice(market.token0, market.token1, dexData);
             require(
                 (!order.longToken && (price <= order.price0 && cAvgPrice <= order.price0 && hAvgPrice <= order.price0)) ||
@@ -271,14 +270,14 @@ contract OPLimitOrder is DelegateInterface, Adminable, ReentrancyGuard, EIP712("
         if (block.timestamp >= lastUpdateTime + TWAP) {
             hAvgPrice = cAvgPrice;
         }
-        if (decimals < QUINTILLION) {
-            price = price * (10**(QUINTILLION - decimals));
-            cAvgPrice = cAvgPrice * (10**(QUINTILLION - decimals));
-            hAvgPrice = hAvgPrice * (10**(QUINTILLION - decimals));
+        if (decimals < DECIMAL) {
+            price = price * (10 ** (DECIMAL - decimals));
+            cAvgPrice = cAvgPrice * (10 ** (DECIMAL - decimals));
+            hAvgPrice = hAvgPrice * (10 ** (DECIMAL - decimals));
         } else {
-            price = price / (10**(decimals - QUINTILLION));
-            cAvgPrice = cAvgPrice / (10**(decimals - QUINTILLION));
-            hAvgPrice = hAvgPrice / (10**(decimals - QUINTILLION));
+            price = price / (10 ** (decimals - DECIMAL));
+            cAvgPrice = cAvgPrice / (10 ** (decimals - DECIMAL));
+            hAvgPrice = hAvgPrice / (10 ** (decimals - DECIMAL));
         }
     }
 
@@ -290,10 +289,10 @@ contract OPLimitOrder is DelegateInterface, Adminable, ReentrancyGuard, EIP712("
     ) internal view returns (uint256 price) {
         uint8 decimals;
         (price, decimals) = dexAgg.getPrice(token0, token1, dexData);
-        if (decimals < QUINTILLION) {
-            price = price * (10**(QUINTILLION - decimals));
+        if (decimals < DECIMAL) {
+            price = price * (10 ** (DECIMAL - decimals));
         } else {
-            price = price / (10**(decimals - QUINTILLION));
+            price = price / (10 ** (decimals - DECIMAL));
         }
     }
 

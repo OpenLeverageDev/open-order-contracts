@@ -20,7 +20,6 @@ interface OpenLevInterface {
         address priceUpdater;
         uint256 pool0Insurance; // Insurance balance for token 0
         uint256 pool1Insurance; // Insurance balance for token 1
-        uint32[] dexs;
     }
 
     struct Trade {

@@ -4,7 +4,6 @@ pragma solidity 0.8.15;
 import "./interfaces/DexAggregatorInterface.sol";
 import "./interfaces/OpenLevInterface.sol";
 import "./IOPLimitOrder.sol";
-import "./IOPLimitOrder.sol";
 
 abstract contract OPLimitOrderStorage {
     event OrderCanceled(address indexed trader, bytes32 orderId, uint256 remaining);

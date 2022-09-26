@@ -20,7 +20,7 @@ contract MockOpenLev is OpenLevInterface {
     }
 
     function createMarket(address token0, address token1) external {
-        _markets[marketId] = OpenLevInterface.Market(address(0), address(0), token0, token1, 0, 0, 0, address(0), 0, 0, new uint32[](0));
+        _markets[marketId] = OpenLevInterface.Market(address(0), address(0), token0, token1, 0, 0, 0, address(0), 0, 0);
         marketId++;
     }
 
