@@ -80,7 +80,7 @@ contract OPLimitOrder is DelegateInterface, Adminable, ReentrancyGuard, EIP712("
             _commissionToken.safeTransferFrom(order.owner, msg.sender, commission);
         }
         remainingDeposit = remainingDeposit - fillingDeposit;
-        emit OrderFilled(msg.sender, orderId, commission, fillingDeposit, remainingDeposit);
+        emit OrderFilled(msg.sender, orderId, commission, remainingDeposit, fillingDeposit);
         _remaining[orderId] = remainingDeposit + 1;
     }
 

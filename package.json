@@ -35,7 +35,7 @@
   },
   "bundleDependencies": false,
   "devDependencies": {
-    "@truffle/hdwallet-provider": "^1.7.0",
+    "@truffle/hdwallet-provider": "2.0.15",
     "eth-gas-reporter": "^0.2.20",
     "mocha-logger": "^1.0.7",
     "prettier": "^2.7.1",
