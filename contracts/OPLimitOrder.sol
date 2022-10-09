@@ -143,7 +143,7 @@ contract OPLimitOrder is DelegateInterface, Adminable, ReentrancyGuard, EIP712("
         }
 
         remainingHeld = remainingHeld - closeAmount;
-        emit OrderFilled(msg.sender, orderId, commission, closeAmount, remainingHeld);
+        emit OrderFilled(msg.sender, orderId, commission, remainingHeld, closeAmount);
         _remaining[orderId] = remainingHeld + 1;
     }
 
