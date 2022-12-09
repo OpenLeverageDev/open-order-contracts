@@ -2,6 +2,11 @@
 
 # OpenLeverage Limit Order Protocol
 
-You can find general overview and docs on OpenLeverage Limit Order protocol [here].
+Limit order component of OpenLevearge. It supports partial fill, best execution with exchange routing.
+
+Audits
+----------
+- [PeckShield Nov 2022](https://github.com/peckshield/publications/tree/master/audit_reports/PeckShield-Audit-Report-OpenLeverage-LimitOrder-v1.0.pdf)
+
 
 
